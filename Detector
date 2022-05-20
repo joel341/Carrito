@@ -1,0 +1,57 @@
+xml_dir = "annotation/lego/"
+img_dir = "images/lego/"
+labels = &#91;"lego"]
+tamanio = 416
+mejores_pesos = "red_lego.h5"
+ 
+def leer_annotations(ann_dir, img_dir, labels=&#91;]):
+    all_imgs = &#91;]
+    seen_labels = {}
+    
+    for ann in sorted(os.listdir(ann_dir)):
+        img = {'object':&#91;]}
+ 
+        tree = ET.parse(ann_dir + ann)
+        
+        for elem in tree.iter():
+            if 'filename' in elem.tag:
+                img&#91;'filename'] = img_dir + elem.text
+            if 'width' in elem.tag:
+                img&#91;'width'] = int(elem.text)
+            if 'height' in elem.tag:
+                img&#91;'height'] = int(elem.text)
+            if 'object' in elem.tag or 'part' in elem.tag:
+                obj = {}
+                
+                for attr in list(elem):
+                    if 'name' in attr.tag:
+                        obj&#91;'name'] = attr.text
+ 
+                        if obj&#91;'name'] in seen_labels:
+                            seen_labels&#91;obj&#91;'name']] += 1
+                        else:
+                            seen_labels&#91;obj&#91;'name']] = 1
+                        
+                        if len(labels) &gt; 0 and obj&#91;'name'] not in labels:
+                            break
+                        else:
+                            img&#91;'object'] += &#91;obj]
+                            
+                    if 'bndbox' in attr.tag:
+                        for dim in list(attr):
+                            if 'xmin' in dim.tag:
+                                obj&#91;'xmin'] = int(round(float(dim.text)))
+                            if 'ymin' in dim.tag:
+                                obj&#91;'ymin'] = int(round(float(dim.text)))
+                            if 'xmax' in dim.tag:
+                                obj&#91;'xmax'] = int(round(float(dim.text)))
+                            if 'ymax' in dim.tag:
+                                obj&#91;'ymax'] = int(round(float(dim.text)))
+ 
+        if len(img&#91;'object']) &gt; 0:
+            all_imgs += &#91;img]
+                        
+    return all_imgs, seen_labels
+ 
+train_imgs, train_labels = leer_annotations(xml_dir, img_dir, labels)
+print('imagenes',len(train_imgs), 'labels',len(train_labels))
